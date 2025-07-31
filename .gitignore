@@ -1,0 +1,68 @@
+@"
+# Dependencies
+/vendor/
+/node_modules/
+/composer.lock
+/package-lock.json
+/yarn.lock
+
+# Environment
+.env
+*.env
+/config.php
+/includes/config.php
+/database.php
+*.pem
+*.key
+
+# Logs
+*.log
+/logs/
+/error_log
+
+# System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE specific files
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+*.sublime-gpscope
+*.sublime-cache
+
+# Cache
+/cache/
+/tmp/
+/sessions/
+
+# Uploads
+/uploads/
+/storage/
+/files/
+/user_uploads/
+
+# XAMPP
+/xampp/
+/php/
+/mysql/
+/htdocs/
+
+# Local development
+*.local
+*.local.*
+!.gitkeep
+
+# Composer
+composer.phar
+/vendor/
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+"@ | Out-File -FilePath .gitignore -Encoding UTF8

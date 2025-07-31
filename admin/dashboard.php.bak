@@ -1,0 +1,377 @@
+<?php
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/auth.php';
+
+// Require admin access
+$auth->requireAdmin();
+
+// Get statistics
+$stats = [
+    'total_students' => $db->query("SELECT COUNT(*) FROM users WHERE role = 'student' AND is_active = 1")->fetchColumn(),
+    'total_teachers' => $db->query("SELECT COUNT(*) FROM users WHERE role = 'teacher' AND is_active = 1")->fetchColumn(),
+    'total_requests' => $db->query("SELECT COUNT(*) FROM document_requests")->fetchColumn(),
+    'pending_requests' => $db->query("SELECT COUNT(*) FROM document_requests WHERE status = 'pending'")->fetchColumn(),
+];
+
+// Get recent document requests
+$recentRequests = $db->query("
+    SELECT dr.*, u.first_name, u.last_name, u.student_id, dt.name as document_type
+    FROM document_requests dr
+    JOIN users u ON u.id = dr.user_id
+    JOIN document_types dt ON dt.id = dr.document_type_id
+    ORDER BY dr.requested_at DESC
+    LIMIT 5
+")->fetchAll();
+
+// Get recent students
+$recentStudents = $db->query("
+    SELECT * FROM users 
+    WHERE role = 'student' AND is_active = 1 
+    ORDER BY created_at DESC 
+    LIMIT 5
+")->fetchAll();
+
+$pageTitle = "Admin Dashboard";
+?>
+<?php include __DIR__ . '/includes/header.php'; ?>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
+            <i class="bi bi-calendar"></i>
+            This week
+        </button>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2 stat-card primary">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Students</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $stats['total_students']; ?></div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2 stat-card success">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Requests</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $stats['total_requests']; ?></div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-file-earmark-text fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2 stat-card warning">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pending Requests</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $stats['pending_requests']; ?></div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clock-history fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2 stat-card danger">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Rejected Requests</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-x-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Requests -->
+<div class="row">
+    <div class="col-md-8 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Document Requests</h6>
+                <a href="document_requests.php" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Document Type</th>
+                                <th>Requested</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recentRequests as $request): ?>
+                                <tr>
+                                    <td>
+                                        <?php echo htmlspecialchars($request['first_name'] . ' ' . $request['last_name']); ?>
+                                        <br><small class="text-muted"><?php echo htmlspecialchars($request['student_id']); ?></small>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($request['document_type']); ?></td>
+                                    <td><?php echo date('M j, Y', strtotime($request['requested_at'])); ?></td>
+                                    <td>
+                                        <span class="badge bg-<?php 
+                                            echo $request['status'] === 'approved' ? 'success' : 
+                                                 ($request['status'] === 'rejected' ? 'danger' : 'warning'); 
+                                        ?>">
+                                            <?php echo ucfirst($request['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="document_requests.php?view=<?php echo $request['id']; ?>" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($recentRequests)): ?>
+                                <tr>
+                                    <td colspan="5" class="text-center">No recent document requests</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Students -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Recently Added Students</h6>
+                <a href="manage_students.php" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <?php foreach ($recentStudents as $student): ?>
+                        <a href="view_student.php?id=<?php echo $student['id']; ?>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?></h6>
+                                <small class="text-muted"><?php echo htmlspecialchars($student['email']); ?></small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">ID: <?php echo htmlspecialchars($student['student_id']); ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                    <?php if (empty($recentStudents)): ?>
+                        <div class="text-center text-muted py-3">No recent students</div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php include __DIR__ . '/includes/footer.php'; ?>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
+                            <i class="bi bi-calendar"></i>
+                            This week
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-primary shadow h-100 py-2 stat-card primary">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            Total Students</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $stats['total_students']; ?></div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-people fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-success shadow h-100 py-2 stat-card success">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            Total Requests</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $stats['total_requests']; ?></div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-file-earmark-text fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-warning shadow h-100 py-2 stat-card warning">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            Pending Requests</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $stats['pending_requests']; ?></div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-clock-history fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-danger shadow h-100 py-2 stat-card danger">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                            Rejected Requests</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-x-circle fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Requests -->
+                <div class="row">
+                    <div class="col-md-8 mb-4">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Recent Document Requests</h6>
+                                <a href="documents.php" class="btn btn-sm btn-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                <?php if (!empty($stats['recent_requests'])): ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" width="100%" cellspacing="0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Student</th>
+                                                    <th>Document</th>
+                                                    <th>Requested</th>
+                                                    <th>Status</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($stats['recent_requests'] as $request): ?>
+                                                    <tr>
+                                                        <td><?php echo htmlspecialchars($request['first_name'] . ' ' . $request['last_name']); ?></td>
+                                                        <td><?php echo htmlspecialchars($request['document_type']); ?></td>
+                                                        <td><?php echo date('M d, Y', strtotime($request['requested_at'])); ?></td>
+                                                        <td>
+                                                            <span class="badge bg-<?php 
+                                                                echo $request['status'] === 'approved' ? 'success' : 
+                                                                    ($request['status'] === 'rejected' ? 'danger' : 'warning');
+                                                            ?>">
+                                                                <?php echo ucfirst($request['status']); ?>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <a href="view-request.php?id=<?php echo $request['id']; ?>" class="btn btn-sm btn-primary">
+                                                                <i class="bi bi-eye"></i> View
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="text-center py-4">
+                                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                                        <p class="mt-2">No document requests found</p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Users -->
+                    <div class="col-md-4 mb-4">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Recently Registered Students</h6>
+                                <a href="users.php" class="btn btn-sm btn-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                <?php if (!empty($stats['recent_users'])): ?>
+                                    <div class="list-group list-group-flush">
+                                        <?php foreach ($stats['recent_users'] as $user): ?>
+                                            <a href="view-user.php?id=<?php echo $user['id']; ?>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h6>
+                                                    <small class="text-muted">ID: <?php echo htmlspecialchars($user['student_id']); ?></small>
+                                                </div>
+                                                <span class="badge bg-primary rounded-pill">New</span>
+                                            </a>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="text-center py-4">
+                                        <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                                        <p class="mt-2">No students found</p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
