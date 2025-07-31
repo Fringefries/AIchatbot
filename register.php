@@ -103,9 +103,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="grade_level" class="form-label">Grade Level</label>
                             <select class="form-select" id="grade_level" name="grade_level" required>
                                 <option value="">Select Grade Level</option>
-                                <?php for ($i = 1; $i <= 12; $i++): ?>
-                                    <option value="Grade <?php echo $i; ?>">Grade <?php echo $i; ?></option>
-                                <?php endfor; ?>
+                                <?php 
+                                $yearLevels = [
+                                    '1' => '1st Year',
+                                    '2' => '2nd Year',
+                                    '3' => '3rd Year',
+                                    '4' => '4th Year'
+                                ];
+                                foreach ($yearLevels as $value => $label): ?>
+                                    <option value="<?php echo $label; ?>"><?php echo $label; ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
