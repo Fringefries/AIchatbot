@@ -132,13 +132,14 @@ class Auth {
             
             // Insert student data
             $stmt = $this->db->prepare("
-                INSERT INTO student_data (user_id, grade_level, section, academic_year)
+                INSERT INTO student_data (user_id, college_year, section, academic_year)
                 VALUES (?, ?, ?, ?)
+            
             ");
             
             $stmt->execute([
                 $userId,
-                $userData['grade_level'] ?? null,
+                $userData['college_year'] ?? null,
                 $userData['section'] ?? null,
                 $userData['academic_year'] ?? date('Y') . '-' . (date('Y') + 1)
             ]);

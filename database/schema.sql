@@ -168,7 +168,7 @@ CREATE TABLE chat_messages (
 CREATE TABLE student_data (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  grade_level VARCHAR(20),
+  college_year ENUM('1st Year', '2nd Year', '3rd Year', '4th Year') NULL,
   section VARCHAR(20),
   academic_year VARCHAR(20),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

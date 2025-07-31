@@ -100,9 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="grade_level" class="form-label">Grade Level</label>
-                            <select class="form-select" id="grade_level" name="grade_level" required>
-                                <option value="">Select Grade Level</option>
+                            <label for="college_year" class="form-label">College Year</label>
+                            <select class="form-select" id="college_year" name="college_year" required>
+                                <option value="">Select College Year</option>
                                 <?php 
                                 $yearLevels = [
                                     '1' => '1st Year',

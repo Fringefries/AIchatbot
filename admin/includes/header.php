@@ -48,53 +48,76 @@ if (!isset($pageTitle)) {
         <div class="row">
             <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 px-0 sidebar">
-                <div class="d-flex flex-column p-3">
-                    <a href="dashboard.php" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-                        <span class="fs-4"><?php echo APP_NAME; ?></span>
-                    </a>
-                    <hr>
-                    <ul class="nav nav-pills flex-column mb-auto">
+                <div class="d-flex flex-column p-3 h-100">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-mortarboard-fill fs-1 text-white-50 mb-2 d-block"></i>
+                        <h5 class="text-white"><?php echo APP_NAME; ?></h5>
+                        <p class="text-white-50 small mb-0">Administration</p>
+                    </div>
+                    <hr class="border-secondary">
+                    <ul class="nav nav-pills flex-column">
                         <li class="nav-item">
-                            <a href="dashboard.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'dashboard.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-speedometer2"></i>
+                            <a href="dashboard.php" class="nav-link text-start <?php echo basename($_SERVER['PHP_SELF']) === 'dashboard.php' ? 'active' : ''; ?>">
                                 Dashboard
                             </a>
                         </li>
-                        <li>
-                            <a href="document_requests.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'document_requests.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-file-earmark-text"></i>
+                        <li class="nav-item">
+                            <a href="document_requests.php" class="nav-link text-start <?php echo basename($_SERVER['PHP_SELF']) === 'document_requests.php' ? 'active' : ''; ?>">
                                 Document Requests
                                 <?php
                                 $pendingCount = $db->query("SELECT COUNT(*) FROM document_requests WHERE status = 'pending'")->fetchColumn();
                                 if ($pendingCount > 0): ?>
-                                    <span class="badge bg-danger rounded-pill ms-2"><?php echo $pendingCount; ?></span>
+                                    <span class="badge bg-danger rounded-pill float-end"><?php echo $pendingCount; ?></span>
                                 <?php endif; ?>
                             </a>
                         </li>
-                        <li>
-                            <a href="manage_students.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'manage_students.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-people"></i>
-                                Students
+                        <li class="nav-item">
+                            <a href="manage_students.php" class="nav-link text-start <?php echo basename($_SERVER['PHP_SELF']) === 'manage_students.php' ? 'active' : ''; ?>">
+                                Student Roster
                             </a>
                         </li>
-                        <li>
-                            <a href="users.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) === 'users.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-person-gear"></i>
-                                User Management
+                        <li class="nav-item">
+                            <a href="users.php" class="nav-link text-start <?php echo basename($_SERVER['PHP_SELF']) === 'users.php' ? 'active' : ''; ?>">
+                                User Accounts
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-start">
+                                Academic Records
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-start">
+                                Class Schedules
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="college_level.php" class="nav-link text-start <?php echo basename($_SERVER['PHP_SELF']) === 'college_level.php' ? 'active' : ''; ?>">
+                                College Level
                             </a>
                         </li>
                     </ul>
-                    <hr>
-                    <div class="dropdown">
-                        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle me-2"></i>
-                            <strong><?php echo htmlspecialchars($auth->getCurrentUser()['first_name'] . ' ' . $auth->getCurrentUser()['last_name']); ?></strong>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
-                            <li><a class="dropdown-item" href="../profile.php">Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../logout.php">Sign out</a></li>
-                        </ul>
+                    
+                    <!-- User dropdown at bottom -->
+                    <div class="mt-auto">
+                        <hr class="border-secondary">
+                        <div class="dropdown">
+                            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="me-2 bg-white text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-person-fill"></i>
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <small class="text-white-50">Logged in as</small>
+                                    <strong class="small"><?php echo htmlspecialchars($auth->getCurrentUser()['first_name'] . ' ' . $auth->getCurrentUser()['last_name']); ?></strong>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                                <li><a class="dropdown-item" href="../profile.php"><i class="bi bi-person me-2"></i>My Profile</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
