@@ -6,7 +6,7 @@ $error = '';
 
 // Redirect if already logged in
 if ($auth->isLoggedIn()) {
-    header('Location: ' . ($auth->isAdmin() ? SITE_URL . '/admin/dashboard.php' : SITE_URL . '/index.php'));
+    header('Location: ' . ($auth->isAdmin() ? SITE_URL . '/admin/admin_dashboard.php' : SITE_URL . '/index.php'));
     exit;
 }
 
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $auth->login($username, $password, $isAdmin);
         
         // Redirect to appropriate dashboard based on user role
-        $redirectUrl = $user['role'] === 'admin' ? '/admin/dashboard.php' : '/index.php';
+        $redirectUrl = $user['role'] === 'admin' ? '/admin/admin_dashboard.php' : '/index.php';
         header('Location: ' . SITE_URL . $redirectUrl);
         exit;
         

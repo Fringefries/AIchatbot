@@ -12,7 +12,7 @@ if (!$auth->isLoggedIn()) {
 
 // Redirect admin users to the admin dashboard
 if ($auth->isAdmin()) {
-    header('Location: ' . SITE_URL . '/admin/dashboard.php');
+    header('Location: ' . SITE_URL . '/admin/admin_dashboard.php');
     exit();
 }
 
@@ -834,7 +834,7 @@ $pageTitle = 'SPCC Chatbot';
                             </a>
                         </li>
                         <li>
-                            <a href="<?php echo SITE_URL; ?>/grades.php" class="nav-link">
+                            <a href="<?php echo SITE_URL; ?>/student/grades.php" class="nav-link">
                                 <i class="bi bi-journal-text"></i>
                                 My Grades
                             </a>
@@ -852,7 +852,7 @@ $pageTitle = 'SPCC Chatbot';
                             </a>
                         </li>
                         <li>
-                            <a href="<?php echo SITE_URL; ?>/profile.php" class="nav-link">
+                            <a href="<?php echo SITE_URL; ?>/student/profile.php" class="nav-link">
                                 <i class="bi bi-person"></i>
                                 My Profile
                             </a>
@@ -860,7 +860,7 @@ $pageTitle = 'SPCC Chatbot';
                         <?php if ($auth->isAdmin()): ?>
                         <li class="mt-4">
                             <div class="text-uppercase small fw-bold text-white-50 mb-2">Admin</div>
-                            <a href="<?php echo SITE_URL; ?>/admin/dashboard.php" class="nav-link">
+                            <a href="<?php echo SITE_URL; ?>/admin/admin_dashboard.php" class="nav-link">
                                 <i class="bi bi-shield-lock"></i>
                                 Admin Panel
                             </a>
@@ -874,7 +874,7 @@ $pageTitle = 'SPCC Chatbot';
                             <strong><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></strong>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
-                            <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/profile.php">Profile</a></li>
+                            <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/student/profile.php">Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/logout.php">Sign out</a></li>
                         </ul>
@@ -896,8 +896,8 @@ $pageTitle = 'SPCC Chatbot';
                             <div class="card-body text-center">
                                 <i class="bi bi-journal-text fs-1 text-primary"></i>
                                 <h5 class="card-title mt-2">Current GPA</h5>
-                                <h2 class="mb-0">3.75</h2>
-                                <small class="text-muted">Out of 4.0 scale</small>
+                                <h2 class="mb-0"><?php echo $gpa ?? 'N/A'; ?></h2>
+                                <small class="text-muted">Based on current term</small>
                             </div>
                         </div>
                     </div>
@@ -972,7 +972,44 @@ $pageTitle = 'SPCC Chatbot';
                                 Recent Grades
                             </div>
                             <div class="card-body p-0">
-                                <?php if (!empty($grades)): ?>
+                                <?php 
+                                // Calculate GPA
+                                $gpa = 0;
+                                $totalCredits = 0;
+                                $gradePoints = 0;
+                                $currentYear = date('Y');
+                                $currentMonth = date('n');
+                                $currentTerm = ($currentMonth >= 8 || $currentMonth <= 1) ? '1st Semester' : '2nd Semester';
+                                $currentAcademicYear = ($currentMonth >= 8) ? $currentYear . '-' . ($currentYear + 1) : ($currentYear - 1) . '-' . $currentYear;
+                                
+                                if (!empty($grades)): 
+                                    // Get unique subjects with their latest grade
+                                    $uniqueGrades = [];
+                                    foreach ($grades as $grade) {
+                                        $subject = $grade['subject'];
+                                        if (!isset($uniqueGrades[$subject]) || 
+                                            strtotime($grade['created_at']) > strtotime($uniqueGrades[$subject]['created_at'])) {
+                                            $uniqueGrades[$subject] = $grade;
+                                        }
+                                        
+                                        // For GPA calculation (only current term)
+                                        if ($grade['term'] === $currentTerm && $grade['academic_year'] === $currentAcademicYear) {
+                                            // Simple GPA calculation (assuming all courses have equal weight)
+                                            $gradeValue = (float)$grade['grade'];
+                                            $gradePoints += $gradeValue;
+                                            $totalCredits++;
+                                        }
+                                    }
+                                    
+                                    // Calculate GPA (4.0 scale)
+                                    $gpa = $totalCredits > 0 ? ($gradePoints / $totalCredits) / 25 : 0;
+                                    $gpa = min(4.0, number_format($gpa, 2));
+                                    
+                                    // Sort by most recent first
+                                    usort($uniqueGrades, function($a, $b) {
+                                        return strtotime($b['created_at']) - strtotime($a['created_at']);
+                                    });
+                                    ?>
                                     <div class="table-responsive">
                                         <table class="table table-hover mb-0">
                                             <thead>
@@ -980,33 +1017,44 @@ $pageTitle = 'SPCC Chatbot';
                                                     <th>Subject</th>
                                                     <th>Grade</th>
                                                     <th>Term</th>
-                                                    <th>Year</th>
+                                                    <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach (array_slice($grades, 0, 5) as $grade): ?>
+                                                <?php foreach (array_slice($uniqueGrades, 0, 5) as $grade): 
+                                                    $gradeClass = 'grade-' . strtoupper(substr($grade['grade'], 0, 1));
+                                                ?>
                                                     <tr>
                                                         <td><?php echo htmlspecialchars($grade['subject']); ?></td>
                                                         <td>
                                                             <span class="badge bg-<?php 
                                                                 echo ($grade['grade'] >= 90) ? 'success' : 
                                                                     (($grade['grade'] >= 75) ? 'primary' : 'danger'); 
-                                                            ?>">
+                                                            ?> grade-value <?php echo $gradeClass; ?>">
                                                                 <?php echo htmlspecialchars($grade['grade']); ?>
                                                             </span>
                                                         </td>
                                                         <td><?php echo htmlspecialchars(ucfirst($grade['term'])); ?></td>
-                                                        <td><?php echo htmlspecialchars($grade['academic_year']); ?></td>
+                                                        <td>
+                                                            <a href="<?php echo SITE_URL; ?>/student/grades.php#<?php echo strtolower(urlencode($grade['subject'])); ?>" 
+                                                               class="btn btn-sm btn-outline-primary"
+                                                               title="View details">
+                                                                <i class="bi bi-eye"></i>
+                                                            </a>
+                                                        </td>
                                                     </tr>
                                                 <?php endforeach; ?>
                                             </tbody>
                                         </table>
                                     </div>
-                                    <?php if (count($grades) > 5): ?>
-                                        <div class="text-end p-2">
-                                            <a href="<?php echo SITE_URL; ?>/grades.php" class="btn btn-sm btn-outline-primary">View All</a>
+                                    <div class="d-flex justify-content-between align-items-center p-2 border-top">
+                                        <div class="text-muted small">
+                                            <strong>Current GPA:</strong> <?php echo $gpa; ?>/4.0
                                         </div>
-                                    <?php endif; ?>
+                                        <a href="<?php echo SITE_URL; ?>/student/grades.php" class="btn btn-sm btn-outline-primary">
+                                            View All Grades <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
                                 <?php else: ?>
                                     <div class="text-center p-4 text-muted">
                                         <i class="bi bi-journal-x fs-1 d-block mb-2"></i>

@@ -24,6 +24,92 @@ class Auth {
     /**
      * Get user by ID
      */
+    /**
+     * Get grades per subject for a student
+     * @param int $studentId The ID of the student
+     * @return array Array of grades grouped by subject and semester
+     */
+    public function getStudentGrades($studentId = null) {
+        if ($studentId === null && $this->isLoggedIn()) {
+            $studentId = $_SESSION['user_id'];
+        }
+        
+        if (!$studentId) {
+            return [];
+        }
+        
+        // Get current academic year and term
+        $currentYear = date('Y');
+        $currentMonth = date('n');
+        $currentTerm = ($currentMonth >= 8 || $currentMonth <= 1) ? '1st Semester' : '2nd Semester';
+        $currentAcademicYear = ($currentMonth >= 8) ? $currentYear . '-' . ($currentYear + 1) : ($currentYear - 1) . '-' . $currentYear;
+        
+        // Fetch all grades for the student
+        $stmt = $this->db->prepare(
+            "SELECT g.*, 
+                    s.name as subject_name,
+                    s.code as subject_code,
+                    CONCAT(g.term, ' ', g.academic_year) as semester
+             FROM grades g
+             LEFT JOIN subjects s ON g.subject = s.code
+             WHERE g.student_id = ?
+             ORDER BY g.academic_year DESC, FIELD(g.term, '1st Semester', '2nd Semester', 'Summer'), g.subject"
+        );
+        $stmt->execute([$studentId]);
+        $grades = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Organize grades by subject and semester
+        $organizedGrades = [];
+        $subjects = [];
+        
+        foreach ($grades as $grade) {
+            $subjectCode = $grade['subject_code'] ?? $grade['subject'];
+            $subjectName = $grade['subject_name'] ?? $grade['subject'];
+            $semester = $grade['semester'];
+            
+            // Initialize subject if not exists
+            if (!isset($organizedGrades[$subjectCode])) {
+                $organizedGrades[$subjectCode] = [
+                    'name' => $subjectName,
+                    'code' => $subjectCode,
+                    'semesters' => []
+                ];
+            }
+            
+            // Add grade to the corresponding semester
+            if (!isset($organizedGrades[$subjectCode]['semesters'][$semester])) {
+                $organizedGrades[$subjectCode]['semesters'][$semester] = [];
+            }
+            
+            $organizedGrades[$subjectCode]['semesters'][$semester][] = [
+                'grade' => $grade['grade'],
+                'term' => $grade['term'],
+                'academic_year' => $grade['academic_year'],
+                'comments' => $grade['comments'],
+                'created_at' => $grade['created_at']
+            ];
+        }
+        
+        // Add current semester at the top if it doesn't have grades yet
+        $currentSemester = $currentTerm . ' ' . $currentAcademicYear;
+        foreach ($organizedGrades as &$subject) {
+            if (!isset($subject['semesters'][$currentSemester])) {
+                $subject['semesters'][$currentSemester] = [];
+            }
+            // Reorder semesters to have current semester first
+            if (isset($subject['semesters'][$currentSemester])) {
+                $current = [$currentSemester => $subject['semesters'][$currentSemester]];
+                unset($subject['semesters'][$currentSemester]);
+                $subject['semesters'] = $current + $subject['semesters'];
+            }
+        }
+        
+        return $organizedGrades;
+    }
+    
+    /**
+     * Get user by ID
+     */
     private function getUserById($id) {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ? AND is_active = 1");
         $stmt->execute([$id]);
@@ -81,6 +167,14 @@ class Auth {
      * Get current user
      */
     public function getCurrentUser() {
+        if (!$this->user && $this->isLoggedIn()) {
+            $success = $this->loadUser($_SESSION['user_id']);
+            if (!$success) {
+                // If we couldn't load the user, log them out
+                $this->logout();
+                return null;
+            }
+        }
         return $this->user;
     }
     
@@ -204,9 +298,54 @@ class Auth {
     }
 
     private function loadUser($userId) {
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ? AND is_active = 1");
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ? AND is_active = 1");
+            $stmt->execute([$userId]);
+            $this->user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$this->user) {
+                error_log("User not found or inactive: " . $userId);
+                $this->logout();
+                return false;
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Error loading user: " . $e->getMessage());
+            $this->user = null;
+            return false;
+        }
+    }
+
+    /**
+     * Change user password
+     * @param int $userId The ID of the user
+     * @param string $currentPassword Current password
+     * @param string $newPassword New password
+     * @return bool True if password was changed successfully, false otherwise
+     */
+    public function changePassword($userId, $currentPassword, $newPassword) {
+        // Get current password hash
+        $stmt = $this->db->prepare("SELECT password FROM users WHERE id = ?");
         $stmt->execute([$userId]);
-        $this->user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$user) {
+            return false;
+        }
+        
+        // Verify current password
+        if (!password_verify($currentPassword, $user['password'])) {
+            return false;
+        }
+        
+        // Hash new password
+        $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        
+        // Update password
+        $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        return $stmt->execute([$newPasswordHash, $userId]);
     }
 }
 

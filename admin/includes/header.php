@@ -57,7 +57,7 @@ if (!isset($pageTitle)) {
                     <hr class="border-secondary">
                     <ul class="nav nav-pills flex-column">
                         <li class="nav-item">
-                            <a href="dashboard.php" class="nav-link text-start <?php echo basename($_SERVER['PHP_SELF']) === 'dashboard.php' ? 'active' : ''; ?>">
+                            <a href="admin_dashboard.php" class="nav-link text-start <?php echo basename($_SERVER['PHP_SELF']) === 'admin_dashboard.php' ? 'active' : ''; ?>">
                                 Dashboard
                             </a>
                         </li>
@@ -112,7 +112,7 @@ if (!isset($pageTitle)) {
                                 </div>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
-                                <li><a class="dropdown-item" href="../profile.php"><i class="bi bi-person me-2"></i>My Profile</a></li>
+                                <li><a class="dropdown-item" href="../student/profile.php"><i class="bi bi-person me-2"></i>My Profile</a></li>
                                 <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>

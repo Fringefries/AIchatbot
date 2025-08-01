@@ -7,7 +7,8 @@ $success = '';
 
 // Redirect if already logged in
 if ($auth->isLoggedIn()) {
-    header('Location: ' . SITE_URL . '/dashboard.php');
+    $redirectUrl = $auth->isAdmin() ? '/admin/admin_dashboard.php' : '/index.php';
+    header('Location: ' . SITE_URL . $redirectUrl);
     exit;
 }
 

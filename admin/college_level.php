@@ -70,48 +70,138 @@ try {
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">College Level Students</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary">Print</button>
+            </div>
+        </div>
     </div>
 
-    <div class="row">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
         <?php foreach ($groupedStudents as $year => $yearStudents): ?>
-            <?php if (!empty($yearStudents)): ?>
-                <div class="col-md-6 col-lg-3 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="card-title mb-0"><?php echo htmlspecialchars($year); ?> Students</h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="list-group list-group-flush">
-                                <?php foreach ($yearStudents as $student): ?>
-                                    <div class="list-group-item">
-                                        <div class="d-flex w-100 justify-content-between">
-                                            <h6 class="mb-1">
-                                                <?php echo htmlspecialchars($student['last_name'] . ', ' . $student['first_name']); ?>
-                                            </h6>
-                                            <small class="text-muted"><?php echo htmlspecialchars($student['student_id']); ?></small>
-                                        </div>
-                                        <div class="d-flex justify-content-between">
-                                            <small class="text-muted">
-                                                Section: <?php echo htmlspecialchars($student['section'] ?? 'N/A'); ?>
-                                            </small>
-                                            <small class="text-muted">
-                                                <?php echo htmlspecialchars($student['academic_year'] ?? ''); ?>
-                                            </small>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
+            <div class="col-md-3 mb-3">
+                <div class="card border-left-primary h-100">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    <?php echo htmlspecialchars($year); ?> Students</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <?php echo count($yearStudents); ?>
+                                </div>
                             </div>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <small class="text-muted">
-                                Total: <?php echo count($yearStudents); ?> student<?php echo count($yearStudents) !== 1 ? 's' : ''; ?>
-                            </small>
+                            <div class="col-auto">
+                                <i class="bi bi-people fa-2x text-gray-300"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs" id="yearTabs" role="tablist">
+        <?php $first = true; ?>
+        <?php foreach ($groupedStudents as $year => $yearStudents): ?>
+            <?php if (!empty($yearStudents)): ?>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link <?php echo $first ? 'active' : ''; ?>" id="tab-<?php echo str_replace(' ', '-', strtolower($year)); ?>" 
+                            data-bs-toggle="tab" data-bs-target="#<?php echo str_replace(' ', '-', strtolower($year)); ?>" 
+                            type="button" role="tab" aria-controls="<?php echo str_replace(' ', '-', strtolower($year)); ?>" 
+                            aria-selected="<?php echo $first ? 'true' : 'false'; ?>">
+                        <?php echo htmlspecialchars($year); ?>
+                        <span class="badge bg-primary rounded-pill"><?php echo count($yearStudents); ?></span>
+                    </button>
+                </li>
+                <?php $first = false; ?>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content p-3 border border-top-0 rounded-bottom" id="yearTabsContent">
+        <?php $first = true; ?>
+        <?php foreach ($groupedStudents as $year => $yearStudents): ?>
+            <?php if (!empty($yearStudents)): ?>
+                <div class="tab-pane fade <?php echo $first ? 'show active' : ''; ?>" 
+                     id="<?php echo str_replace(' ', '-', strtolower($year)); ?>" 
+                     role="tabpanel" 
+                     aria-labelledby="tab-<?php echo str_replace(' ', '-', strtolower($year)); ?>">
+                    
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary"><?php echo htmlspecialchars($year); ?> Students</h6>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary me-2">
+                                    <i class="bi bi-download"></i> Export
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-printer"></i> Print
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Section</th>
+                                            <th>Academic Year</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $counter = 1; ?>
+                                        <?php foreach ($yearStudents as $student): ?>
+                                            <tr>
+                                                <td><?php echo $counter++; ?></td>
+                                                <td><?php echo htmlspecialchars($student['student_id']); ?></td>
+                                                <td><?php echo htmlspecialchars($student['last_name'] . ', ' . $student['first_name']); ?></td>
+                                                <td><?php echo htmlspecialchars($student['section'] ?? 'N/A'); ?></td>
+                                                <td><?php echo htmlspecialchars($student['academic_year'] ?? 'N/A'); ?></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" title="View Profile">
+                                                        <i class="bi bi-person-lines"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-success" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer text-muted">
+                            Showing <?php echo count($yearStudents); ?> student<?php echo count($yearStudents) !== 1 ? 's' : ''; ?>
+                        </div>
+                    </div>
+                </div>
+                <?php $first = false; ?>
             <?php endif; ?>
         <?php endforeach; ?>
     </div>
 </div>
+
+<!-- Initialize Bootstrap Tabs -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tabElms = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabElms.forEach(function(tabEl) {
+        tabEl.addEventListener('click', function (e) {
+            e.preventDefault();
+            var tab = new bootstrap.Tab(tabEl);
+            tab.show();
+        });
+    });
+});
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
